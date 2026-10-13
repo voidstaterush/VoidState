@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VoidStateOfficial: describe a scene, get a video</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ===== EDIT COLORS HERE ===== */
+:root{--bg:#0e0c15;--panel:#181423;--line:#2b2540;--text:#ece8f5;--mute:#9a93b0;--accent:#8fd3ff;--accent2:#c9a7ff;
+--display:'Unbounded',system-ui,sans-serif;--body:'Instrument Sans',system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 var(--body);
+background-image:radial-gradient(ellipse 60% 40% at 80% -10%,#2a1f4d55,transparent)}
+header,main{max-width:1180px;margin:0 auto;padding:0 20px}
+header{display:flex;justify-content:space-between;align-items:center;padding-top:22px;padding-bottom:22px}
+.logo{font:700 15px var(--display);letter-spacing:.02em}
+h1{font:700 clamp(28px,5vw,52px)/1.08 var(--display);margin:10px 0 10px;max-width:15em}
+.lede{color:var(--mute);max-width:46ch;margin:0 0 28px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+label{display:block;font-size:13px;color:var(--mute);margin:12px 0 5px}
+textarea,select,input[type=text]{width:100%;background:#110e1b;border:1px solid var(--line);color:var(--text);border-radius:9px;padding:10px 12px;font:inherit}
+textarea{min-height:130px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{font:600 15px var(--body);border-radius:9px;border:1px solid var(--line);background:#221c33;color:var(--text);padding:10px 16px;cursor:pointer;transition:background .15s,transform .15s}
+button:hover{background:#2c2442}button:active{transform:scale(.98)}
+button.go{background:var(--accent);color:#06121b;border-color:var(--accent)}button.go:hover{background:#b3e3ff}
+button:disabled{opacity:.5;cursor:wait}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.stage{aspect-ratio:16/9;background:#09070f;border:1px dashed var(--line);border-radius:10px;display:grid;place-items:center;color:var(--mute);text-align:center;padding:16px;overflow:hidden}
+.stage video{width:100%;height:100%;object-fit:contain;background:#000}
+.bar{height:4px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:12px;display:none}
+.bar i{display:block;height:100%;width:30%;background:linear-gradient(90deg,var(--accent),var(--accent2));animation:slide 1.2s infinite ease-in-out}
+@keyframes slide{0%{margin-left:-30%}100%{margin-left:100%}}
+.msg{font-size:14px;margin-top:10px;min-height:20px}.msg.err{color:#ff9aa8}
+.ref{font-size:13px;color:var(--mute);background:#110e1b;border-radius:8px;padding:8px 10px;margin-top:8px;display:none}
+h2{font:500 18px var(--display);margin:40px 0 14px}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.item{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.item video{width:100%;display:block;background:#000}.item p{margin:0;padding:8px 10px;font-size:13px;color:var(--mute);display:flex;justify-content:space-between;gap:8px}
+.item button{padding:2px 8px;font-size:12px}
+.check{display:flex;gap:8px;align-items:center;margin-top:12px;font-size:14px;color:var(--mute)}.check input{width:auto}
+footer{max-width:1180px;margin:60px auto 30px;padding:0 20px;color:var(--mute);font-size:13px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header><span class="logo">VoidStateOfficial</span><span class="lede" style="margin:0;font-size:13px">Free scene generator</span></header>
+<main>
+<h1>Describe a scene. Watch it move.</h1>
+<p class="lede">Write what happens, pick a look, and generate a short clip. Add a reference to borrow its mood, not its footage.</p>
+
+<div class="grid">
+<section class="card" aria-label="Scene builder">
+  <label for="prompt">Scene description</label>
+  <textarea id="prompt" placeholder="A lone cyclist crosses a foggy salt flat at dawn, low sun, slow tracking shot"></textarea>
+  <div class="row">
+    <div><label for="style">Style</label><select id="style"><option value="">None</option><option>cinematic</option><option>anime</option><option>documentary</option><option>3D render</option><option>vintage film</option><option>claymation</option></select></div>
+    <div><label for="camera">Camera</label><select id="camera"><option value="">None</option><option>slow pan</option><option>push-in zoom</option><option>aerial drone shot</option><option>handheld</option><option>static wide shot</option></select></div>
+    <div><label for="aspect">Aspect ratio</label><select id="aspect"><option>16:9</option><option>9:16</option><option>1:1</option></select></div>
+    <div><label for="len">Length</label><select id="len"><option>3</option><option selected>5</option><option>8</option><option>10</option></select></div>
+  </div>
+  <label for="refLink">Style or mood reference (optional)</label>
+  <input type="text" id="refLink" placeholder="Describe it or paste a link, e.g. 'moody, like a Nordic noir opening'">
+  <input type="file" id="refFile" accept="image/*,video/*" style="margin-top:8px;font-size:13px;color:var(--mute)" aria-label="Upload reference image or clip">
+  <div class="ref" id="refOut"></div>
+  <label class="check"><input type="checkbox" id="story"> Storyboard mode: put each scene on its own line, I'll generate them in order</label>
+  <div class="actions">
+    <button id="enhance" type="button">Enhance prompt</button>
+    <button id="gen" type="button" class="go">Generate video</button>
+  </div>
+  <div class="msg" id="msg" role="status"></div>
+</section>
+
+<section class="card" aria-label="Result">
+  <div class="stage" id="stage">Your video appears here.</div>
+  <div class="bar" id="bar"><i></i></div>
+  <div class="actions" id="resultActions" hidden>
+    <a id="dl" download="voidstate-scene.mp4"><button type="button">Download</button></a>
+    <button id="regen" type="button">Regenerate</button>
+    <button id="edit" type="button">Edit prompt</button>
+  </div>
+</section>
+</div>
+
+<h2>Your gallery</h2>
+<div class="gallery" id="gallery"></div>
+</main>
+<footer>Saved in this browser only. Prompts naming real people, copyrighted characters, or explicit content are blocked. Describe an original character, or ask for something "inspired by" a mood or style.</footer>
+
+<script>
+// ===== SETTINGS =====
+const API = "/.netlify/functions/generate"; // change if you host the backend elsewhere
+const $ = (id) => document.getElementById(id);
+let refGuidance = "", lastPrompt = "";
+
+// ----- Prompt enhancer: builds a detailed prompt from your inputs (no API needed) -----
+function buildPrompt(raw) {
+  const p = [raw.trim().replace(/\.$/, "")];
+  if ($("style").value) p.push(`${$("style").value} style`);
+  if ($("camera").value) p.push(`${$("camera").value} camera`);
+  if (refGuidance) p.push(refGuidance);
+  p.push("coherent motion, consistent subject, natural lighting, high detail, " + $("len").value + " second clip");
+  return p.join(", ");
+}
+$("enhance").onclick = () => {
+  const v = $("prompt").value.trim();
+  if (!v) return say("Write a short description first.", true);
+  $("prompt").value = buildPrompt(v);
+  refGuidance = ""; say("Prompt enhanced. Edit it freely.");
+};
+
+// ----- Reference analysis: runs in your browser, extracts mood as TEXT only -----
+$("refFile").onchange = async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const bmp = await frameOf(f), c = document.createElement("canvas");
+    c.width = 32; c.height = Math.max(1, Math.round(32 * bmp.h / bmp.w));
+    const x = c.getContext("2d"); x.drawImage(bmp.src, 0, 0, c.width, c.height);
+    const d = x.getImageData(0, 0, c.width, c.height).data; let r=0,g=0,b=0,l=0,n=d.length/4;
+    for (let i=0;i<d.length;i+=4){r+=d[i];g+=d[i+1];b+=d[i+2];l+=(d[i]+d[i+1]+d[i+2])/3}
+    r/=n;g/=n;b/=n;l/=n;
+    const tone = l<85?"dark, low-key lighting":l>170?"bright, high-key lighting":"balanced exposure";
+    const warm = r>b+15?"warm color palette":b>r+15?"cool color palette":"neutral color palette";
+    const shape = bmp.w/bmp.h>1.4?"wide cinematic framing":bmp.w/bmp.h<0.8?"tall vertical framing":"square framing";
+    refGuidance = `${tone}, ${warm}, ${shape}`;
+    $("refOut").style.display = "block"; $("refOut").textContent = "Reference mood: " + refGuidance;
+  } catch { say("Could not read that file as an image or video.", true); }
+};
+function frameOf(file) {
+  return new Promise((res, rej) => {
+    const u = URL.createObjectURL(file);
+    if (file.type.startsWith("video")) { const v = document.createElement("video"); v.src = u; v.muted = true;
+      v.onloadeddata = () => { v.currentTime = Math.min(1, v.duration / 2) }; v.onseeked = () => res({src:v,w:v.videoWidth,h:v.videoHeight}); v.onerror = rej; }
+    else { const i = new Image(); i.onload = () => res({src:i,w:i.width,h:i.height}); i.onerror = rej; i.src = u; }
+  });
+}
+$("refLink").onchange = () => { const t = $("refLink").value.trim();
+  if (t) { refGuidance = (refGuidance ? refGuidance + ", " : "") + (/^https?:/.test(t) ? "" : "mood: " + t);
+    if (/^https?:/.test(t)) say("Links can't be read for you. Describe the look in words instead, or upload a frame."); } };
+
+// ----- Generation -----
+function say(t, err) { $("msg").textContent = t; $("msg").className = "msg" + (err ? " err" : ""); }
+async function post(body) {
+  const r = await fetch(API, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(body) });
+  const d = await r.json(); if (!r.ok) throw new Error(d.error || "Request failed"); return d;
+}
+async function makeClip(prompt) {
+  let d = await post({ action: "generate", prompt, aspect: $("aspect").value });
+  while (!d.url) { // provider is async: poll until done
+    await new Promise(r => setTimeout(r, 4000));
+    const s = await post({ action: "status", id: d.id });
+    if (s.status === "failed") throw new Error(s.error);
+    if (s.status === "done") d = { url: s.url };
+  }
+  return d.url;
+}
+function show(url, prompt) {
+  $("stage").innerHTML = ""; const v = document.createElement("video");
+  v.src = url; v.controls = true; v.autoplay = true; v.loop = true; v.playsInline = true; $("stage").append(v);
+  $("dl").href = url; $("resultActions").hidden = false; lastPrompt = prompt;
+}
+async function run() {
+  const text = $("prompt").value.trim(); if (!text) return say("Describe a scene first.", true);
+  const scenes = $("story").checked ? text.split("\n").map(s => s.trim()).filter(Boolean) : [text];
+  $("gen").disabled = true; $("bar").style.display = "block";
+  try {
+    for (let i = 0; i < scenes.length; i++) {
+      say(scenes.length > 1 ? `Generating scene ${i+1} of ${scenes.length}…` : "Generating. This can take a minute or two…");
+      const prompt = scenes[i].length < 120 ? buildPrompt(scenes[i]) : scenes[i];
+      const url = await makeClip(prompt); show(url, prompt); save(url, prompt);
+    }
+    say("Done. Saved to your gallery.");
+  } catch (e) { say(e.message, true); }
+  $("gen").disabled = false; $("bar").style.display = "none";
+}
+$("gen").onclick = run; $("regen").onclick = run;
+$("edit").onclick = () => { $("prompt").value = lastPrompt; $("prompt").focus(); };
+
+// ----- Gallery (localStorage; large data: URLs are skipped to stay under the browser limit) -----
+const KEY = "voidstate_gallery";
+const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || [] } catch { return [] } };
+function save(url, prompt) {
+  if (url.startsWith("data:")) return;
+  try { localStorage.setItem(KEY, JSON.stringify([{url, prompt, t: Date.now()}, ...load()].slice(0, 30))); } catch {}
+  render();
+}
+function render() {
+  const g = $("gallery"); g.innerHTML = ""; const items = load();
+  if (!items.length) { g.innerHTML = '<p class="lede">Nothing yet. Generated clips are saved here.</p>'; return; }
+  items.forEach((it, i) => {
+    const d = document.createElement("div"); d.className = "item";
+    d.innerHTML = '<video controls preload="metadata"></video><p><span></span><button type="button">Delete</button></p>';
+    d.querySelector("video").src = it.url; d.querySelector("span").textContent = it.prompt.slice(0, 40) + "…";
+    d.querySelector("button").onclick = () => { const a = load(); a.splice(i, 1); localStorage.setItem(KEY, JSON.stringify(a)); render(); };
+    g.append(d);
+  });
+}
+render();
+</script>
+</body>
+</html>
